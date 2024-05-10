@@ -12,7 +12,7 @@ const { getApp } = require("firebase/app");
 
 // const grecaptcha = require('grecaptcha')
 const firebaseConfig = {
-	apiKey: "AIzaSyB2r13V8v3bm6jrSX8apZnX1HZSOwqFQ0I",
+	apiKey: "",
     authDomain: "townplanmap.firebaseapp.com",
     projectId: "townplanmap",
     storageBucket: "townplanmap.appspot.com",
@@ -25,16 +25,16 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 AWS.config.update({
-    accessKeyId: 'AKIAYGY7F2XL2WNRTAVT',
-    secretAccessKey: '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',
-    region: 'us-east-2'});
+    accessKeyId: '',
+    secretAccessKey: '',
+    region: ''});
 
 // Create an instance of the S3 client
 const s3 = new AWS.S3();
 
 // Create a Redis client
 const client = redis.createClient({
-    password: 'zcsn0BNIiaUaFc3UbPmRSPR0LObfU95Y',
+    password: '',
     socket: {
         host: 'redis-10882.c11.us-east-1-3.ec2.redns.redis-cloud.com',
         port: 10882
@@ -202,7 +202,7 @@ if (options.length >= 2) {
 // Gen erate PDF of the page
   await page.pdf({ path: `${jsonData.id}.pdf`, format: 'A4' });
   await delay(2000)
-  await uploadFile('reradata', `${jsonData.id}.pdf`,jsonData.id);
+  await uploadFile('reradata', `${jsonData.id}.pdf`,jsonData.id,jsonData);
   browser.close();
 }  
 
@@ -298,7 +298,7 @@ async function delay(ms) {
   }
     
 
-  const uploadFile = async(bucketName, filePath,id) => {
+  const uploadFile = async(bucketName, filePath,id,jsonData) => {
     // Read content from the file
     
     const fileContent = mm.readFileSync(filePath);
@@ -318,6 +318,7 @@ async function delay(ms) {
       console.log(`File uploaded successfully. ${data.Location}`);
       updateLink(data.Location,id)
     });
+    whatsappsend(jsonData,data.Location)
   };
 
 
@@ -329,4 +330,33 @@ async function delay(ms) {
     } catch (error) {
       console.error('Error submitting data:', error);
   }
+  }
+
+
+
+  async function whatsappsend(data,link){
+    const phoneNumber = data.phone
+    const number = phoneNumber.substring(1);
+    const options = {
+      method: 'POST',
+      headers: {
+        'content-type': 'text/json',
+        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhMmY5YjU4MC1hYjUyLTQxOGItOWVkYS02YWY0NjQ2MjAyZTUiLCJ1bmlxdWVfbmFtZSI6InRvd25wbGFubWFwQGdtYWlsLmNvbSIsIm5hbWVpZCI6InRvd25wbGFubWFwQGdtYWlsLmNvbSIsImVtYWlsIjoidG93bnBsYW5tYXBAZ21haWwuY29tIiwiYXV0aF90aW1lIjoiMDUvMTAvMjAyNCAwNTowNDozNyIsImRiX25hbWUiOiJtdC1wcm9kLVRlbmFudHMiLCJ0ZW5hbnRfaWQiOiIzMDk1NjQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBRE1JTklTVFJBVE9SIiwiZXhwIjoyNTM0MDIzMDA4MDAsImlzcyI6IkNsYXJlX0FJIiwiYXVkIjoiQ2xhcmVfQUkifQ.cJSxtQdlyLu9qVd-n-AJkI2aKFexJCQ8piGqB7Txrf8'
+      },
+      body: JSON.stringify({
+        broadcast_name: 'hi',
+        parameters: [
+          {
+            name: 'document',
+            value: link
+          }
+        ],
+        template_name: 'anyror_survey'
+      })
+    };
+    
+    await fetch(`https://live-mt-server.wati.io/309564/api/v1/sendTemplateMessage?whatsappNumber=${number}`, options)
+      .then(response => response.json())
+      .then(response => console.log(response))
+      .catch(err => console.error(err));
   }
